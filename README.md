@@ -1,6 +1,7 @@
 # Nettverk 2 – Automatisert oppsett med Python og Ansible
 
 Automatisert konfigurasjon av eit Cisco-rack med VLAN, router-on-a-stick, HSRP, OSPF, DHCP og EtherChannel mellom to studentrack (STUD1 og STUD2).
+Oppgåva var løyst individuelt men samarbeid mellom STUD1 og STUD2 for samspel for VLAN, namnestandard og samsvarande IP-seriar har resultert i eit meir oversiktleg oppsett.
 
 | Del | Verktøy | Gjer |
 |---|---|---|
@@ -80,16 +81,16 @@ STUD2 har same oppsett med prefiks `S2-`.
                │ Gi1/0/3
           ┌─ 9300L ─┐
   Gi1/0/1 │         │ Gi1/0/2
-   Gi0/0/0│         │Gi0/0
+  Gi0/0/0 │         │ Gi0/0
         4221       2901
-   Gi0/0/1│         │Gi0/1
-     Gi0/1│         │Gi0/2
+  Gi0/0/1 │         │ Gi0/1
+    Gi0/1 │         │ Gi0/2
           └─ 2960 ──┘
                │ Fa0/1
                │ Gi1/0/1
              C1000 ════ Gi1/0/4-5 ════ C1000 i det andre racket (Po1, LACP)
-          Gi1/0/2│  │Gi1/0/3
-          VLAN 10   VLAN 20
+     Gi1/0/2 │   │ Gi1/0/3
+     VLAN 10       VLAN 20
 ```
 
 > På 2960-24TT er dei 24 portane `Fa0/1-24` og dei to separate portane `Gi0/1-2`.
@@ -104,12 +105,12 @@ STUD2 har same oppsett med prefiks `S2-`.
 |---|---|---|---|---|
 | Klientar (felles over Po1) | 10 | 192.168.10.0/24 | 192.168.10.0/24 | 192.168.10.1 (HSRP) |
 | Klientar (felles over Po1) | 20 | 192.168.20.0/24 | 192.168.20.0/24 | 192.168.20.1 (HSRP) |
-| MGMT topp (9300L, rutar-uplinkar, MGMT PC) | 99 | 10.0.11.0/24 | 10.0.21.0/24 | – (OSPF) |
-| MGMT botn (svitsjar) | 99 | 10.0.12.0/24 | 10.0.22.0/24 | 10.0.x2.1 (HSRP) |
+| MGMT topp (9300L, router-uplink, MGMT PC) | 99 | 10.0.11.0/24 | 10.0.21.0/24 | – (OSPF) |
+| MGMT botn (switchar) | 99 | 10.0.12.0/24 | 10.0.22.0/24 | 10.0.x2.1 (HSRP) |
 | Loopbackar (/32) | – | 10.0.10.0/24 | 10.0.20.0/24 | – |
 | Native | 999 | – | – | – |
 
-Rutarane står mellom 9300L og 2960, og ein VLAN kan ikkje gå gjennom ein rutar. VLAN 99 blir derfor brukt på begge segmenta, med kvart sitt subnett.
+Rutarane står mellom 9300L og 2960, og VLAN kan ikkje gå gjennom rutar. VLAN 99 blir derfor brukt på begge segmenta, med kvart sitt subnett men same VID.
 
 ### Einingar
 
@@ -126,27 +127,27 @@ Rutarane står mellom 9300L og 2960, og ein VLAN kan ikkje gå gjennom ein rutar
 
 | Rutar | IP i VLAN 10 / 20 / 99 | HSRP-prioritet (10/20 – 99) | DHCP-område |
 |---|---|---|---|
-| S1-R1 | .2 / .2 / 10.0.12.2 | 110 – 110 | .21–.80 |
-| S1-R2 | .3 / .3 / 10.0.12.3 | 105 – 105 | .81–.140 |
-| S2-R1 | .4 / .4 / 10.0.22.2 | 100 – 110 | .141–.200 |
-| S2-R2 | .5 / .5 / 10.0.22.3 | 95 – 105 | .201–.254 |
+| S1-R1 | .2 / .2 / 10.0.12.2 | 110 – 110 | .50-.100 |
+| S1-R2 | .3 / .3 / 10.0.12.3 | 105 – 105 | .101-.150 |
+| S2-R1 | .4 / .4 / 10.0.22.2 | 100 – 110 | .151-.200 |
+| S2-R2 | .5 / .5 / 10.0.22.3 | 95 – 105 | .201-250 |
 
 - **VIP** er alltid `.1`, og gruppenummeret er likt VLAN-ID-en. Alle grupper har `preempt`.
-- **.1–.20** er reservert for VIP, rutarar og faste adresser.
+- **.1–.49** er reservert for VIP, rutarar og faste adresser.
 - **DHCP-poolane** har HSRP-VIP-en som `default-router`.
 
 ### Avtalt mellom STUD1 og STUD2
 
-Klient-VLAN 10 og 20, native VLAN 999, Po1 med LACP `active` som trunk på Gi1/0/4-5, tillatne VLAN 10 og 20, og rutar-IP-ar og DHCP-område som i tabellen over.
+Klient-VLAN 10 og 20, native VLAN 999, Po1 med LACP `active` som trunk på Gi1/0/4-5, tillate VLAN 10 og 20, og rutar-IP-ar og DHCP-område som i tabellen over.
 
 ---
 
 ## Installasjon
 
-Ansible køyrer ikkje på Windows. Bruk Linux eller WSL (Ubuntu). Python-skriptet kan køyrast på både Windows og Linux.
+Ansible køyrer ikkje på Windows. Bruk Linux eller WSL (Ubuntu), kan installere Ubuntu via Microsoft Store. Python-skriptet kan køyrast på både Windows og Linux.
 
 ```bash
-git clone <repo-url> ~/ak2       # i heimemappa, ikkje /mnt/c
+git clone https://github.com/eripet15/AK2-Nettverk.git ~/ak2       # i heimemappa, ikkje /mnt/c
 cd ~/ak2
 
 python3 -m venv ~/ansible-venv
@@ -155,7 +156,7 @@ pip install -r requirements.txt
 ansible-galaxy collection install -r requirements.yml
 ```
 
-`requirements.txt` låser `paramiko<3`, fordi IOS-en på 2901, 2960 og C1000 berre støttar SHA-1 key exchange.
+`requirements.txt` låser `paramiko<3`, fordi IOS-en på nokre einingar berre støttar SHA-1 key exchange.
 
 **Python-skriptet på Windows:**
 ```powershell
@@ -186,7 +187,7 @@ Kople konsollkabelen til eininga og lukk andre program som brukar porten (PuTTY 
 
 På Linux treng brukaren tilgang til serieportar: `sudo usermod -aG dialout $USER`, og logg ut og inn etterpå. Køyr `dmesg | tail` etter at kabelen er kopla til for å sjå namnet på porten.
 
-### Input (STUD1)
+### Eksempel på input for test oppsett (STUD1)
 
 Same brukarnamn, passord og domene på alle einingar. Maske `255.255.255.0`.
 
@@ -200,7 +201,7 @@ Same brukarnamn, passord og domene på alle einingar. Maske `255.255.255.0`.
 
 STUD2: `S1-` → `S2-`, `10.0.11.x` → `10.0.21.x`, `10.0.12.x` → `10.0.22.x`.
 
-Etterpå svarar 9300L og rutarane på SSH. Svitsjane blir først nåbare etter `02_routers.yml`.
+Etterpå svarar 9300L og rutarane på SSH. Switchene blir først nåbare etter `02_routers.yml`.
 
 ---
 
@@ -210,8 +211,8 @@ Etterpå svarar 9300L og rutarane på SSH. Svitsjane blir først nåbare etter `
 |---|---|---|
 | `01_core.yml` | 9300L | VLAN-namn, Loopback0, OSPF |
 | `02_routers.yml` | Rutarar | Loopback0, subinterfaces, HSRP, OSPF |
-| `03_switches.yml` | Svitsjar | VLAN, rapid-PVST, trunkar, access-portar |
-| `04_etherchannel.yml` | Svitsjar | Po1 mot det andre racket |
+| `03_switches.yml` | Switchar | VLAN, rapid-PVST, trunkar, access-portar |
+| `04_etherchannel.yml` | Switchar | Po1 mot det andre racket |
 | `05_dhcp.yml` | Rutarar | DHCP-pool per klient-VLAN |
 | `06_verify.yml` | Alle | Status for OSPF, HSRP, DHCP, VLAN, trunkar og Po1 |
 | `site.yml` | Alle | Køyrer 01–06 i rekkjefølgje |
@@ -223,7 +224,7 @@ ansible-playbook site.yml -k                  # køyr
 
 `-k` spør etter SSH-passordet. Første gong kan det vere lurt å køyre playbookane éin og éin.
 
-- **`02_routers.yml` må køyre før `03_switches.yml`**, fordi svitsjane først er nåbare når rutarane har subinterface `.99` og HSRP-VIP-en.
+- **`02_routers.yml` må køyre før `03_switches.yml`**, fordi switchane først er nåbare når rutarane har subinterface `.99` og HSRP-VIP-en.
 - **Po1 kjem først opp når begge studentane har køyrt `04_etherchannel.yml`.**
 
 ### Python og Ansible saman
@@ -269,7 +270,7 @@ dhcp_range: { start: 141, end: 200 }
 | Tilgang | `ansible all -m cisco.ios.ios_command -a "commands='show clock'" -k` | SUCCESS på alle |
 | Idempotens | `ansible-playbook site.yml -k` to gonger | `changed=0` andre gong |
 | Status | `ansible-playbook 06_verify.yml -k` | OSPF FULL, R1 Active / R2 Standby, `Po1(SU)` |
-| DHCP | Klient på DHCP, `ipconfig /renew` | Adresse i .21–.254, gateway .1 |
+| DHCP | Klient på DHCP, `ipconfig /renew` | Adresse i .50–.250, gateway .1 |
 | Same VLAN over Po1 | Ping mellom klientar i VLAN 10 på kvart rack | Svar |
 | Ruting mellom VLAN | Ping frå VLAN 10 til VLAN 20 | Svar |
 | Mgmt-isolasjon | Ping frå MGMT PC S1 til 10.0.22.11 | Ingen svar |
@@ -285,7 +286,7 @@ dhcp_range: { start: 141, end: 200 }
 | `kex error` / `no acceptable kex algorithm` | Gammal IOS. Set `ansible_network_cli_ssh_type: paramiko` og bruk `paramiko<3` |
 | `host key mismatch` | `ssh-keygen -R <ip>` (skjer når Python-skriptet har laga ny RSA-nøkkel) |
 | `Access denied` | Manglar `-k`, eller feil `ansible_user` |
-| `No route to host` mot svitsjane | Køyr `02_routers.yml` først, og sjekk IP-ane i inventory |
+| `No route to host` mot switchane | Køyr `02_routers.yml` først, og sjekk IP-ane i inventory |
 | `command timeout triggered` | Køyr på nytt. Eldre svitsjar er trege ved første innlogging |
 | `YAML parsing failed` | Manglande komma eller mellomrom. `ansible-inventory --list` finn fila |
 | HSRP Active/Active, standby `unknown` | Rutarane høyrer ikkje kvarandre. Sjekk kabling og trunkar på 2960 |
