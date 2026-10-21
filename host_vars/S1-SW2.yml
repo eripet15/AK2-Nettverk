@@ -1,0 +1,8 @@
+trunk_ports:
+  - GigabitEthernet1/0/1
+access_ports:
+  - { port: GigabitEthernet1/0/2, vlan: 10 }
+  - { port: GigabitEthernet1/0/3, vlan: 20 }
+po_members:
+  - GigabitEthernet1/0/4
+  - GigabitEthernet1/0/5

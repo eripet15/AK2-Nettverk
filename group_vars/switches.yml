@@ -1,0 +1,4 @@
+ansible_network_cli_ssh_type: paramiko
+ansible_timeout: 60
+ansible_connect_timeout: 120
+ansible_command_timeout: 120

@@ -1,0 +1,10 @@
+ansible_network_cli_ssh_type: paramiko
+
+loopback_ip: 10.0.10.3
+uplink: GigabitEthernet0/0
+downlink: GigabitEthernet0/1
+subinterfaces:
+  - { vlan: 10, ip: 192.168.10.3, vip: 192.168.10.1, priority: 105 }
+  - { vlan: 20, ip: 192.168.20.3, vip: 192.168.20.1, priority: 105 }
+  - { vlan: 99, ip: 10.0.12.3,    vip: 10.0.12.1,    priority: 105 }
+dhcp_range: { start: 81, end: 140 }

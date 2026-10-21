@@ -1,0 +1,39 @@
+# DHCP på rutarane for kvart klient-VLAN.
+# Kvar rutar deler berre ut sin eigen del av subnettet (dhcp_range i host_vars),
+# slik at fleire rutarar i same VLAN aldri deler ut same adresse.
+# Gateway til klientane er alltid HSRP-VIP-en (item.vip).
+- name: DHCP for klient-VLAN
+  hosts: routers
+  gather_facts: false
+  vars:
+    # Berre subinterfaces som er klient-VLAN (ikkje mgmt VLAN 99)
+    client_ids: "{{ client_vlans | map(attribute='id') | list }}"
+    dhcp_subifs: "{{ subinterfaces | selectattr('vlan', 'in', client_ids) | list }}"
+  tasks:
+    # Ekskluder alt under rutaren sitt område (.1 til start-1)
+    - name: Ekskluder adresser under område
+      cisco.ios.ios_config:
+        lines:
+          - "ip dhcp excluded-address {{ item.vip | regex_replace('\\.\\d+$', '') }}.1 {{ item.vip | regex_replace('\\.\\d+$', '') }}.{{ dhcp_range.start - 1 }}"
+      loop: "{{ dhcp_subifs }}"
+
+    # Ekskluder alt over rutaren sitt område (end+1 til .254)
+    - name: Ekskluder adresser over område
+      cisco.ios.ios_config:
+        lines:
+          - "ip dhcp excluded-address {{ item.vip | regex_replace('\\.\\d+$', '') }}.{{ dhcp_range.end + 1 }} {{ item.vip | regex_replace('\\.\\d+$', '') }}.254"
+      loop: "{{ dhcp_subifs }}"
+      when: dhcp_range.end < 254
+
+    # Éin pool per VLAN, med HSRP-VIP som default-router
+    - name: DHCP-pool per VLAN
+      cisco.ios.ios_config:
+        parents: "ip dhcp pool VLAN{{ item.vlan }}"
+        lines:
+          - "network {{ item.vip | regex_replace('\\.\\d+$', '') }}.0 {{ mask }}"
+          - "default-router {{ item.vip }}"
+      loop: "{{ dhcp_subifs }}"
+
+    - name: Lagre
+      cisco.ios.ios_config:
+        save_when: modified

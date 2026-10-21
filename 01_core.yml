@@ -1,0 +1,40 @@
+- name: Core L3 switch - mgmt VLAN, loopback, OSPF
+  hosts: core
+  gather_facts: false
+  tasks:
+    - name: Mgmt VLAN navn
+      cisco.ios.ios_vlans:
+        config:
+          - vlan_id: "{{ mgmt_vlan.id }}"
+            name: "{{ mgmt_vlan.name }}"
+        state: merged
+
+    - name: Loopback0
+      cisco.ios.ios_config:
+        parents: interface Loopback0
+        lines:
+          - ip address {{ loopback_ip }} 255.255.255.255
+
+    - name: OSPF prosess
+      cisco.ios.ios_config:
+        parents: router ospf {{ ospf.process }}
+        lines:
+          - router-id {{ loopback_ip }}
+
+    - name: OSPF passive interface
+      cisco.ios.ios_config:
+        parents: router ospf {{ ospf.process }}
+        lines:
+          - passive-interface {{ item }}
+      loop: "{{ ospf_passive }}"
+
+    - name: Enable OSPF on interfaces
+      cisco.ios.ios_config:
+        parents: interface {{ item }}
+        lines:
+          - ip ospf {{ ospf.process }} area {{ ospf.area }}
+      loop: "{{ ospf_interfaces }}"
+
+    - name: Lagre
+      cisco.ios.ios_config:
+        save_when: modified

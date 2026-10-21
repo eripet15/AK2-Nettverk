@@ -1,0 +1,6 @@
+- import_playbook: 01_core.yml
+- import_playbook: 02_routers.yml
+- import_playbook: 03_switches.yml
+- import_playbook: 04_etherchannel.yml
+- import_playbook: 05_dhcp.yml
+- import_playbook: 06_verify.yml

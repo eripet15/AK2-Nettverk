@@ -1,0 +1,4 @@
+ansible
+ansible-pylibssh
+paramiko<3
+cryptography<43

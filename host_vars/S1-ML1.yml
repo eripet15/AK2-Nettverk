@@ -1,0 +1,6 @@
+loopback_ip: 10.0.10.1
+ospf_interfaces:
+  - Loopback0
+  - Vlan99
+ospf_passive:
+  - Loopback0

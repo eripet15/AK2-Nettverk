@@ -1,0 +1,38 @@
+- name: Verify core
+  hosts: core
+  gather_facts: false
+  tasks:
+    - cisco.ios.ios_command:
+        commands:
+          - show ip ospf neighbor
+          - show ip route ospf
+      register: out
+    - ansible.builtin.debug:
+        var: out.stdout_lines
+
+- name: Verify routers
+  hosts: routers
+  gather_facts: false
+  tasks:
+    - cisco.ios.ios_command:
+        commands:
+          - show standby brief
+          - show ip ospf neighbor
+          - show ip interface brief
+          - show ip dhcp pool
+      register: out
+    - ansible.builtin.debug:
+        var: out.stdout_lines
+
+- name: Verify switches
+  hosts: switches
+  gather_facts: false
+  tasks:
+    - cisco.ios.ios_command:
+        commands:
+          - show vlan brief
+          - show interfaces trunk
+          - show etherchannel summary
+      register: out
+    - ansible.builtin.debug:
+        var: out.stdout_lines

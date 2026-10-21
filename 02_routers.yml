@@ -1,0 +1,50 @@
+- name: Rutere - loopback, subinterfaces, HSRP og OSPF
+  hosts: routers
+  gather_facts: false
+  tasks:
+    - name: Loopback0
+      cisco.ios.ios_config:
+        parents: interface Loopback0
+        lines:
+          - ip address {{ loopback_ip }} 255.255.255.255
+
+    - name: Downlink up
+      cisco.ios.ios_interfaces:
+        config:
+          - name: "{{ downlink }}"
+            enabled: true
+        state: merged
+
+    - name: Subinterfaces + HSRP
+      cisco.ios.ios_config:
+        parents: interface {{ downlink }}.{{ item.vlan }}
+        lines:
+          - encapsulation dot1Q {{ item.vlan }}
+          - ip address {{ item.ip }} {{ mask }}
+          - standby version 2
+          - standby {{ item.vlan }} ip {{ item.vip }}
+          - standby {{ item.vlan }} priority {{ item.priority }}
+          - standby {{ item.vlan }} preempt
+          - ip ospf {{ ospf.process }} area {{ ospf.area }}
+      loop: "{{ subinterfaces }}"
+
+    - name: OSPF process (berre uplink fra naboer)
+      cisco.ios.ios_config:
+        parents: router ospf {{ ospf.process }}
+        lines:
+          - router-id {{ loopback_ip }}
+          - passive-interface default
+          - no passive-interface {{ uplink }}
+
+    - name: OSPF on loopback + uplink
+      cisco.ios.ios_config:
+        parents: interface {{ item }}
+        lines:
+          - ip ospf {{ ospf.process }} area {{ ospf.area }}
+      loop:
+        - Loopback0
+        - "{{ uplink }}"
+
+    - name: Lagre
+      cisco.ios.ios_config:
+        save_when: modified

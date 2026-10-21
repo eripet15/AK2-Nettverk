@@ -1,0 +1,27 @@
+# --- TILKOPLING ---
+ansible_connection: ansible.netcommon.network_cli
+ansible_network_os: cisco.ios.ios
+ansible_user: admin
+
+# --- NETTVERKSOPPSETT ---
+mask: 255.255.255.0
+
+mgmt_vlan: { id: 99, name: MGMT }
+native_vlan: { id: 999, name: NATIVE }
+client_vlans:
+  - { id: 10, name: Student1 }
+  - { id: 20, name: Student2 }
+
+# Trunk i rack, for klientar og MGMT. EtherChannel bare for klient
+trunk_vlans: "{{ (client_vlans | map(attribute='id') | list + [mgmt_vlan.id]) | join(',') }}"
+po_vlans: "{{ client_vlans | map(attribute='id') | join(',') }}"
+
+stp_mode: rapid-pvst
+
+etherchannel:
+  id: 1
+  mode: active
+
+ospf:
+  process: 1
+  area: 0

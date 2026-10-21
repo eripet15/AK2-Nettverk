@@ -1,0 +1,8 @@
+loopback_ip: 10.0.10.2
+uplink: GigabitEthernet0/0/0
+downlink: GigabitEthernet0/0/1
+subinterfaces:
+  - { vlan: 10, ip: 192.168.10.2, vip: 192.168.10.1, priority: 110 }
+  - { vlan: 20, ip: 192.168.20.2, vip: 192.168.20.1, priority: 110 }
+  - { vlan: 99, ip: 10.0.12.2,    vip: 10.0.12.1,    priority: 110 }
+dhcp_range: { start: 21, end: 80 }

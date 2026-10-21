@@ -1,0 +1,6 @@
+trunk_ports:
+  - GigabitEthernet0/1
+  - GigabitEthernet0/2
+  - FastEthernet0/1
+access_ports: []
+po_members: []

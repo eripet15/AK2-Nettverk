@@ -1,0 +1,14 @@
+# Ansible
+*.retry
+ansible.log
+
+# Python
+__pycache__/
+*.pyc
+ansible-venv/
+venv/
+.venv/
+
+# Editor/OS
+.vscode/
+.DS_Store
